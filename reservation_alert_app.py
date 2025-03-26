@@ -48,22 +48,19 @@ import os
 import requests
 
 def send_whatsapp(phone_number, message):
-    instance_id = os.environ.get("ULTRAMSG_INSTANCE_ID")
-    token = os.environ.get("ULTRAMSG_TOKEN")
-    url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
-
+    print(f"📲 Attempting to send WhatsApp to {phone_number} with message: {message}")
+    
+    url = f"https://api.ultramsg.com/{ULTRAMSG_INSTANCE_ID}/messages/chat"
     payload = {
-        "token": token,
+        "token": ULTRAMSG_TOKEN,
         "to": phone_number,
         "body": message
     }
-
     try:
-        print("Sending WhatsApp to:", phone_number)
         response = requests.post(url, data=payload)
-        print("WhatsApp sent:", response.json())
+        print("📤 WhatsApp sent:", response.status_code, response.json())
     except Exception as e:
-        print("WhatsApp failed:", e)
+        print("❌ WhatsApp failed:", e)
 
 
 # Check reservation availability
