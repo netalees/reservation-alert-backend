@@ -68,6 +68,24 @@ def create_alert():
     db.session.add(new_alert)
     db.session.commit()
     return jsonify({'message': 'Alert created successfully!'}), 201
+@app.route("/check_status", methods=["GET"])
+def check_status():
+    email = request.args.get("email")
+    date = request.args.get("date")
+    time = request.args.get("time")
+
+    if not email or not date or not time:
+        return jsonify({"error": "Missing parameters"}), 400
+
+    alert = Alert.query.filter_by(email=email, date=date, time=time).first()
+
+    if not alert:
+        return jsonify({"status": "not_found"}), 404
+
+    return jsonify({
+        "status": "available" if alert.notified else "pending",
+        "restaurant_url": alert.restaurant_url if alert.notified else None
+    })
 
 # Run the app
 if __name__ == '__main__':
