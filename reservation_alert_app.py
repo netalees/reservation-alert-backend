@@ -56,6 +56,7 @@ def send_whatsapp(phone_number, message):
         print("WhatsApp failed:", e)
 
 # Check reservation availability
+# Check reservation availability
 def check_availability():
     with app.app_context():
         alerts = Alert.query.filter_by(notified=False).all()
@@ -78,7 +79,6 @@ def check_availability():
 
                     alert.notified = True
                     db.session.commit()
-
             except Exception as e:
                 print(f"Error checking availability: {e}")
 
