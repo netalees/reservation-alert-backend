@@ -88,10 +88,15 @@ def check_availability():
                     if alert.email:
                         send_email(alert.email, "Table Available!", msg)
                     if alert.phone_number:
+                        print(f"📲 Phone number found: {alert.phone_number}, sending WhatsApp...")
                         send_whatsapp(alert.phone_number, msg)
+
 
                     alert.notified = True
                     db.session.commit()
+                else:
+                    print(f"🚫 {alert.time} not found in available times: {available_texts}")
+
             except Exception as e:
                 print(f"Error checking availability: {e}")
 
