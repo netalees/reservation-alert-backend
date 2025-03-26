@@ -68,8 +68,10 @@ def check_availability():
                 # ✅ Look for all time buttons that are NOT disabled
                 available_buttons = soup.select('button')
                 available_texts = [btn.get_text(strip=True) for btn in available_buttons if not btn.has_attr('disabled')]
+                print("✅ Available times:", available_texts)
+                print("🔍 Alert time:", alert.time)
 
-                if alert.time in available_texts:
+                if alert.time.lower() in (t.lower() for t in available_texts):
                     msg = f"🎉 Table available at {alert.restaurant_url} for {alert.party_size} on {alert.date} at {alert.time}."
 
                     if alert.email:
