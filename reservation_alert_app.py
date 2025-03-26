@@ -6,6 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 from bs4 import BeautifulSoup
 import smtplib
+import datetime
 from email.message import EmailMessage
 
 app = Flask(__name__)
@@ -65,6 +66,7 @@ def send_whatsapp(phone_number, message):
 
 # Check reservation availability
 def check_availability():
+    print("Checking availability at", datetime.datetime.now())
     with app.app_context():
         alerts = Alert.query.filter_by(notified=False).all()
         for alert in alerts:
@@ -75,11 +77,14 @@ def check_availability():
                 # ✅ Look for all time buttons that are NOT disabled
                 available_buttons = soup.select('button')
                 available_texts = [btn.get_text(strip=True) for btn in available_buttons if not btn.has_attr('disabled')]
-                print("✅ Available times:", available_texts)
-                print("🔍 Alert time:", alert.time)
 
-                if alert.time.lower() in (t.lower() for t in available_texts):
-                    msg = f"🎉 Table available at {alert.restaurant_url} for {alert.party_size} on {alert.date} at {alert.time}."
+                # 🧠 Try to extract a working booking link if possible
+                booking_links = [btn.get('data-url') or btn.get('href') for btn in available_buttons if not btn.has_attr('disabled')]
+                booking_links = [link for link in booking_links if link]  # filter out None values
+                booking_url = booking_links[0] if booking_links else alert.restaurant_url
+
+                if alert.time in available_texts:
+                    msg = f"🎉 Table available for {alert.party_size} on {alert.date} at {alert.time}. Book: {booking_url}"
 
                     if alert.email:
                         send_email(alert.email, "Table Available!", msg)
@@ -92,6 +97,7 @@ def check_availability():
                 print(f"Error checking availability: {e}")
 
 scheduler.add_job(check_availability, 'interval', minutes=5)
+
 
 # API route to create alert
 @app.route('/create_alert', methods=['POST'])
