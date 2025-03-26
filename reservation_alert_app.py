@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
+from flask import copy_current_request_context
 from bs4 import BeautifulSoup
 import smtplib
 from email.message import EmailMessage
@@ -56,6 +57,7 @@ def send_whatsapp(phone_number, message):
         print("WhatsApp failed:", e)
 
 # Check reservation availability
+@copy_current_request_context
 def check_availability():
     with app.app_context():
         alerts = Alert.query.filter_by(notified=False).all()
@@ -63,17 +65,22 @@ def check_availability():
             try:
                 response = requests.get(alert.restaurant_url)
                 soup = BeautifulSoup(response.text, 'html.parser')
-                if 'No availability' not in soup.text:
+
+                # ✅ Look for all time buttons that are NOT disabled
+                available_buttons = soup.select('button')
+                available_texts = [btn.get_text(strip=True) for btn in available_buttons if not btn.has_attr('disabled')]
+
+                if alert.time in available_texts:
                     msg = f"🎉 Table available at {alert.restaurant_url} for {alert.party_size} on {alert.date} at {alert.time}."
 
-                if alert.email:
-                    send_email(alert.email, "Table Available!", msg)
+                    if alert.email:
+                        send_email(alert.email, "Table Available!", msg)
+                    if alert.phone_number:
+                        send_whatsapp(alert.phone_number, msg)
 
-                if alert.phone_number:
-                    send_whatsapp(alert.phone_number, msg)
+                    alert.notified = True
+                    db.session.commit()
 
-                alert.notified = True
-                db.session.commit()
             except Exception as e:
                 print(f"Error checking availability: {e}")
 
