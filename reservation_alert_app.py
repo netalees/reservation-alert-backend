@@ -14,6 +14,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///alerts.db'
 db = SQLAlchemy(app)
 scheduler = BackgroundScheduler()
 scheduler.start()
+print("Scheduler started!")
 
 # Database model
 class Alert(db.Model):
