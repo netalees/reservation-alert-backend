@@ -37,20 +37,45 @@ def send_email(recipient, subject, body):
         server.login('your_email@example.com', 'your_app_password')
         server.send_message(msg)
 
+import requests
+
+ULTRAMSG_INSTANCE_ID = "111736"  # replace with your actual instance ID
+ULTRAMSG_TOKEN = "your_token_here"  # replace with your actual token
+
+def send_whatsapp(phone_number, message):
+    url = f"https://api.ultramsg.com/{ULTRAMSG_INSTANCE_ID}/messages/chat"
+    payload = {
+        "token": ULTRAMSG_TOKEN,
+        "to": phone_number,
+        "body": message
+    }
+    try:
+        response = requests.post(url, data=payload)
+        print("WhatsApp sent:", response.json())
+    except Exception as e:
+        print("WhatsApp failed:", e)
+
 # Check reservation availability
 def check_availability():
-    alerts = Alert.query.filter_by(notified=False).all()
-    for alert in alerts:
-        try:
-            response = requests.get(alert.restaurant_url)
-            soup = BeautifulSoup(response.text, 'html.parser')
-            if 'No availability' not in soup.text:
-                send_email(alert.email, 'Table Available!',
-                           f'Table available at {alert.restaurant_url} for {alert.party_size} on {alert.date} at {alert.time}')
+    with app.app_context():
+        alerts = Alert.query.filter_by(notified=False).all()
+        for alert in alerts:
+            try:
+                response = requests.get(alert.restaurant_url)
+                soup = BeautifulSoup(response.text, 'html.parser')
+                if 'No availability' not in soup.text:
+                    msg = f"🎉 Table available at {alert.restaurant_url} for {alert.party_size} on {alert.date} at {alert.time}."
+
+                if alert.email:
+                    send_email(alert.email, "Table Available!", msg)
+
+                if alert.phone_number:
+                    send_whatsapp(alert.phone_number, msg)
+
                 alert.notified = True
                 db.session.commit()
-        except Exception as e:
-            print(f"Error checking availability: {e}")
+            except Exception as e:
+                print(f"Error checking availability: {e}")
 
 scheduler.add_job(check_availability, 'interval', minutes=5)
 
@@ -88,7 +113,8 @@ def check_status():
     })
 
 # Run the app
-if __name__ == '__main__':
+if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+        app.run(debug=False)  # <<< make sure debug is off
+
