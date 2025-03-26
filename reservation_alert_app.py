@@ -4,7 +4,6 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
-from flask import copy_current_request_context
 from bs4 import BeautifulSoup
 import smtplib
 from email.message import EmailMessage
@@ -57,7 +56,6 @@ def send_whatsapp(phone_number, message):
         print("WhatsApp failed:", e)
 
 # Check reservation availability
-@copy_current_request_context
 def check_availability():
     with app.app_context():
         alerts = Alert.query.filter_by(notified=False).all()
