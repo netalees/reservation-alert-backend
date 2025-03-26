@@ -42,20 +42,27 @@ import requests
 ULTRAMSG_INSTANCE_ID = "111736"  # replace with your actual instance ID
 ULTRAMSG_TOKEN = "your_token_here"  # replace with your actual token
 
+import os
+import requests
+
 def send_whatsapp(phone_number, message):
-    url = f"https://api.ultramsg.com/{ULTRAMSG_INSTANCE_ID}/messages/chat"
+    instance_id = os.environ.get("ULTRAMSG_INSTANCE_ID")
+    token = os.environ.get("ULTRAMSG_TOKEN")
+    url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
+
     payload = {
-        "token": ULTRAMSG_TOKEN,
+        "token": token,
         "to": phone_number,
         "body": message
     }
+
     try:
         response = requests.post(url, data=payload)
         print("WhatsApp sent:", response.json())
     except Exception as e:
         print("WhatsApp failed:", e)
 
-# Check reservation availability
+
 # Check reservation availability
 def check_availability():
     with app.app_context():
