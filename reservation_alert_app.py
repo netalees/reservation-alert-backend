@@ -71,7 +71,7 @@ def send_whatsapp(phone_number, message):
 
 # Check reservation availability
 def check_availability():
-    print("Checking availability at", datetime.datetime.now())
+    print("Checking availability at", datetime.now())
     with app.app_context():
         alerts = Alert.query.filter_by(notified=False).all()
         for alert in alerts:
