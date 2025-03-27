@@ -1,6 +1,6 @@
 # reservation_alert_app.py
 
-from flask import Flask
+from flask import Flask, request  # Import request here
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -15,7 +15,7 @@ db = SQLAlchemy()
 migrate = Migrate()
 scheduler = BackgroundScheduler()
 
-# Create and configure the Flask app inside a function to avoid circular import
+# Create Flask app inside a function to avoid circular imports
 def create_app():
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///alerts.db'
@@ -30,9 +30,9 @@ def create_app():
     
     return app
 
-app = create_app()  # Initialize the Flask app
+app = create_app()
 
-# Your existing routes and models would go here, for example:
+# Model for alerts
 class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     restaurant_url = db.Column(db.String(500), nullable=False)
@@ -40,11 +40,46 @@ class Alert(db.Model):
     time = db.Column(db.String(20), nullable=False)
     party_size = db.Column(db.Integer, nullable=False)
     email = db.Column(db.String(100), nullable=False)
+    phone_number = db.Column(db.String(20), nullable=False)  # Added phone_number
     notified = db.Column(db.Boolean, default=False)
 
-# Make sure to add any further route definitions below
+    def __repr__(self):
+        return f"<Alert {self.restaurant_url} at {self.date} {self.time} for {self.party_size} people>"
 
-# Initialize Flask-Migrate with the app and db
+# Route for creating alerts
+@app.route('/create_alert', methods=['POST'])
+def create_alert():
+    try:
+        data = request.json  # Now correctly using request object
+
+        # Extract data from JSON
+        restaurant_url = data.get("restaurant_url")
+        date = data.get("date")
+        time = data.get("time")
+        party_size = data.get("party_size")
+        email = data.get("email")
+        phone_number = data.get("phone_number")
+
+        # Create a new Alert object and add it to the database
+        new_alert = Alert(
+            restaurant_url=restaurant_url,
+            date=date,
+            time=time,
+            party_size=party_size,
+            email=email,
+            phone_number=phone_number,
+        )
+
+        db.session.add(new_alert)
+        db.session.commit()
+
+        return {"message": "Alert created successfully!"}, 201
+
+    except Exception as e:
+        print(f"Error creating alert: {e}")
+        return {"message": "Failed to create alert"}, 500
+
+# Initialize Flask-Migrate with app and db
 migrate = Migrate(app, db)
 
 # Email sending function
