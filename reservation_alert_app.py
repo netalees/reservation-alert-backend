@@ -1,6 +1,4 @@
-# reservation_alert_app.py
-
-from flask import Flask, request  # Import request here
+from flask import Flask, request, jsonify  # Import request and jsonify here
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -40,7 +38,7 @@ class Alert(db.Model):
     time = db.Column(db.String(20), nullable=False)
     party_size = db.Column(db.Integer, nullable=False)
     email = db.Column(db.String(100), nullable=False)
-    phone_number = db.Column(db.String(20), nullable=False)  # Added phone_number
+    phone_number = db.Column(db.String(20), nullable=True)  # Added phone_number
     notified = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
@@ -79,9 +77,6 @@ def create_alert():
         print(f"Error creating alert: {e}")
         return {"message": "Failed to create alert"}, 500
 
-# Initialize Flask-Migrate with app and db
-migrate = Migrate(app, db)
-
 # Email sending function
 def send_email(recipient, subject, body):
     msg = EmailMessage()
@@ -95,14 +90,7 @@ def send_email(recipient, subject, body):
         server.login('your_email@example.com', 'your_app_password')
         server.send_message(msg)
 
-import requests
-
-ULTRAMSG_INSTANCE_ID = "111736"  # replace with your actual instance ID
-ULTRAMSG_TOKEN = "your_token_here"  # replace with your actual token
-
-import os
-import requests
-
+# WhatsApp sending function
 def send_whatsapp(phone_number, message):
     print(f"📲 Attempting to send WhatsApp to {phone_number} with message: {message}")
     
@@ -117,7 +105,6 @@ def send_whatsapp(phone_number, message):
         print("📤 WhatsApp sent:", response.status_code, response.json())
     except Exception as e:
         print("❌ WhatsApp failed:", e)
-
 
 # Check reservation availability
 def check_availability():
@@ -150,7 +137,7 @@ def check_availability():
             except Exception as e:
                 print(f"⚠️ Error checking availability for alert {alert}: {e}")
 
-
+# Scheduler job
 scheduler.add_job(check_availability, 'interval', minutes=1, next_run_time=datetime.utcnow())
 print("🧠 Scheduler job is added and running...")
 
@@ -199,4 +186,3 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
         app.run(debug=False)  # <<< make sure debug is off
-
