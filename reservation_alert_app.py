@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify  # Import request and jsonify here
+from flask import Flask, request, jsonify  # Added jsonify for proper JSON responses
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -16,8 +16,8 @@ scheduler = BackgroundScheduler()
 # Create Flask app inside a function to avoid circular imports
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///alerts.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///alerts.db'  # Database URI
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
     
     # Initialize app with db and migrate
     db.init_app(app)
@@ -71,11 +71,11 @@ def create_alert():
         db.session.add(new_alert)
         db.session.commit()
 
-        return {"message": "Alert created successfully!"}, 201
+        return jsonify({"message": "Alert created successfully!"}), 201
 
     except Exception as e:
         print(f"Error creating alert: {e}")
-        return {"message": "Failed to create alert"}, 500
+        return jsonify({"message": "Failed to create alert"}), 500
 
 # Email sending function
 def send_email(recipient, subject, body):
@@ -142,26 +142,6 @@ scheduler.add_job(check_availability, 'interval', minutes=1, next_run_time=datet
 print("🧠 Scheduler job is added and running...")
 
 # API route to create alert
-@app.route("/create_alert", methods=["POST"])
-def create_alert():
-    data = request.json
-    new_alert = Alert(
-        restaurant_url=data["restaurant_url"],
-        date=data["date"],
-        time=data["time"],
-        party_size=data["party_size"],
-        email=data["email"],
-        phone_number=data.get("phone_number", None),
-    )
-    
-    db.session.add(new_alert)
-    db.session.commit()
-    
-    # Add this log to confirm the alert is being created:
-    print(f"🚨 Alert created: {new_alert}")
-    
-    return jsonify({"message": "Alert created successfully!"}), 201
-
 @app.route("/check_status", methods=["GET"])
 def check_status():
     email = request.args.get("email")
