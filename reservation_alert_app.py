@@ -71,10 +71,12 @@ def send_whatsapp(phone_number, message):
 
 # Check reservation availability
 def check_availability():
-    print("Checking availability at", datetime.now())
+    print("🧠 Checking availability...")
     with app.app_context():
         alerts = Alert.query.filter_by(notified=False).all()
+        print(f"🔎 Found {len(alerts)} pending alerts")
         for alert in alerts:
+            print(f"Alert details: {alert}")
             try:
                 response = requests.get(alert.restaurant_url)
                 soup = BeautifulSoup(response.text, 'html.parser')
@@ -110,8 +112,9 @@ scheduler.add_job(check_availability, 'interval', minutes=5, next_run_time=datet
 
 
 # API route to create alert
-@app.route('/create_alert', methods=['POST'])
+@app.route("/create_alert", methods=["POST"])
 def create_alert():
+    print("🚨 Received alert submission!")
     data = request.json
     new_alert = Alert(
         restaurant_url=data['restaurant_url'],
