@@ -15,6 +15,10 @@ db = SQLAlchemy(app)
 scheduler = BackgroundScheduler()
 scheduler.start()
 print("Scheduler started!")
+# Create DB and tables if they don’t exist
+with app.app_context():
+    db.create_all()
+    print("✅ Created DB on Render (if needed)")
 
 # Database model
 class Alert(db.Model):
