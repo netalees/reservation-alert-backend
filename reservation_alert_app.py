@@ -116,18 +116,24 @@ print("🧠 Scheduler job is added and running...")
 # API route to create alert
 @app.route("/create_alert", methods=["POST"])
 def create_alert():
-    print("🚨 Received alert submission!")
     data = request.json
     new_alert = Alert(
-        restaurant_url=data['restaurant_url'],
-        date=data['date'],
-        time=data['time'],
-        party_size=data['party_size'],
-        email=data['email']
+        restaurant_url=data["restaurant_url"],
+        date=data["date"],
+        time=data["time"],
+        party_size=data["party_size"],
+        email=data["email"],
+        phone_number=data.get("phone_number", None),
     )
+    
     db.session.add(new_alert)
     db.session.commit()
-    return jsonify({'message': 'Alert created successfully!'}), 201
+    
+    # Add this log to confirm the alert is being created:
+    print(f"🚨 Alert created: {new_alert}")
+    
+    return jsonify({"message": "Alert created successfully!"}), 201
+
 @app.route("/check_status", methods=["GET"])
 def check_status():
     email = request.args.get("email")
