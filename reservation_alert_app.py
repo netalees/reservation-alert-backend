@@ -11,6 +11,8 @@ from email.message import EmailMessage
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///alerts.db'
+import os
+print("🗂️  Using DB at:", os.path.abspath(app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')))
 db = SQLAlchemy(app)
 scheduler = BackgroundScheduler()
 scheduler.start()
