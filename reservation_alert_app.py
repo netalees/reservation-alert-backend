@@ -1,33 +1,38 @@
 # reservation_alert_app.py
 
-from flask import Flask, request, jsonify
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 from bs4 import BeautifulSoup
 import smtplib
 from datetime import datetime
 from email.message import EmailMessage
-from flask_migrate import Migrate
-from reservation_alert_app import app, db 
 
-# Initialize Flask-Migrate
-migrate = Migrate(app, db)
-
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///alerts.db'
-import os
-print("🗂️  Using DB at:", os.path.abspath(app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')))
-db = SQLAlchemy(app)
+# Initialize the DB, Migrate, and Scheduler
+db = SQLAlchemy()
+migrate = Migrate()
 scheduler = BackgroundScheduler()
-scheduler.start()
-print("Scheduler started!")
-# Create DB and tables if they don’t exist
-with app.app_context():
-    db.create_all()
-    print("✅ Created DB on Render (if needed)")
 
+# Create and configure the Flask app inside a function to avoid circular import
+def create_app():
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///alerts.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Initialize app with db and migrate
+    db.init_app(app)
+    migrate.init_app(app, db)
+    
+    # Initialize scheduler
+    scheduler.start()
+    
+    return app
+
+app = create_app()  # Initialize the Flask app
+
+# Your existing routes and models would go here, for example:
 class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     restaurant_url = db.Column(db.String(500), nullable=False)
@@ -35,8 +40,12 @@ class Alert(db.Model):
     time = db.Column(db.String(20), nullable=False)
     party_size = db.Column(db.Integer, nullable=False)
     email = db.Column(db.String(100), nullable=False)
-    phone_number = db.Column(db.String(20), nullable=False)  # Add this line
     notified = db.Column(db.Boolean, default=False)
+
+# Make sure to add any further route definitions below
+
+# Initialize Flask-Migrate with the app and db
+migrate = Migrate(app, db)
 
 # Email sending function
 def send_email(recipient, subject, body):
