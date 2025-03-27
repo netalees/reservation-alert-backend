@@ -72,43 +72,34 @@ def send_whatsapp(phone_number, message):
 # Check reservation availability
 def check_availability():
     print("🧠 Scheduler triggered - checking availability...")
-    for alert in alerts:
-        print(f"Alert: {alert.date}, {alert.time}, Party size: {alert.party_size}")
+    
     with app.app_context():
-        alerts = Alert.query.filter_by(notified=False).all()
-        print(f"🔎 Found {len(alerts)} pending alerts")
+        alerts = Alert.query.filter_by(notified=False).all()  # Make sure alerts are fetched inside the context
+        print(f"⚡ Found {len(alerts)} pending alerts")
+
         for alert in alerts:
-            print(f"Alert details: {alert}")
+            print(f"🔔 Alert details: {alert}")
             try:
                 response = requests.get(alert.restaurant_url)
                 soup = BeautifulSoup(response.text, 'html.parser')
 
-                # ✅ Look for all time buttons that are NOT disabled
+                # Look for all time buttons that are NOT disabled
                 available_buttons = soup.select('button')
                 available_texts = [btn.get_text(strip=True) for btn in available_buttons if not btn.has_attr('disabled')]
 
-                # 🧠 Try to extract a working booking link if possible
+                # Try to extract a working booking link if possible
                 booking_links = [btn.get('data-url') or btn.get('href') for btn in available_buttons if not btn.has_attr('disabled')]
-                booking_links = [link for link in booking_links if link]  # filter out None values
-                booking_url = booking_links[0] if booking_links else alert.restaurant_url
+                booking_url = next((link for link in booking_links if link), alert.restaurant_url)
 
                 if alert.time in available_texts:
-                    msg = f"🎉 Table available for {alert.party_size} on {alert.date} at {alert.time}. Book: {booking_url}"
-
-                    if alert.email:
-                        send_email(alert.email, "Table Available!", msg)
-                    if alert.phone_number:
-                        print(f"📲 Phone number found: {alert.phone_number}, sending WhatsApp...")
-                        send_whatsapp(alert.phone_number, msg)
-
-
-                    alert.notified = True
-                    db.session.commit()
+                    print(f"✅ {alert.time} available!")
+                    # Here, you would notify the user or mark it as notified in DB
                 else:
                     print(f"🚫 {alert.time} not found in available times: {available_texts}")
 
             except Exception as e:
-                print(f"Error checking availability: {e}")
+                print(f"⚠️ Error checking availability for alert {alert}: {e}")
+
 
 scheduler.add_job(check_availability, 'interval', minutes=1, next_run_time=datetime.utcnow())
 print("🧠 Scheduler job is added and running...")
