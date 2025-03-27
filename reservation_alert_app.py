@@ -110,7 +110,7 @@ def check_availability():
             except Exception as e:
                 print(f"Error checking availability: {e}")
 
-scheduler.add_job(check_availability, 'interval', minutes=5, next_run_time=datetime.utcnow())
+scheduler.add_job(check_availability, 'interval', minutes=1, next_run_time=datetime.utcnow())
 print("🧠 Scheduler job is added and running...")
 
 # API route to create alert
