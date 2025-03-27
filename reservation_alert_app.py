@@ -71,7 +71,9 @@ def send_whatsapp(phone_number, message):
 
 # Check reservation availability
 def check_availability():
-    print("🧠 Checking availability...")
+    print("🧠 Scheduler triggered - checking availability...")
+    for alert in alerts:
+        print(f"Alert: {alert.date}, {alert.time}, Party size: {alert.party_size}")
     with app.app_context():
         alerts = Alert.query.filter_by(notified=False).all()
         print(f"🔎 Found {len(alerts)} pending alerts")
@@ -109,7 +111,7 @@ def check_availability():
                 print(f"Error checking availability: {e}")
 
 scheduler.add_job(check_availability, 'interval', minutes=5, next_run_time=datetime.utcnow())
-
+print("🧠 Scheduler job is added and running...")
 
 # API route to create alert
 @app.route("/create_alert", methods=["POST"])
