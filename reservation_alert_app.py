@@ -8,6 +8,12 @@ from bs4 import BeautifulSoup
 import smtplib
 from datetime import datetime
 from email.message import EmailMessage
+from flask_migrate import Migrate
+from reservation_alert_app import app, db 
+
+# Initialize Flask-Migrate
+migrate = Migrate(app, db)
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///alerts.db'
@@ -22,7 +28,6 @@ with app.app_context():
     db.create_all()
     print("✅ Created DB on Render (if needed)")
 
-# Database model
 class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     restaurant_url = db.Column(db.String(500), nullable=False)
@@ -30,6 +35,7 @@ class Alert(db.Model):
     time = db.Column(db.String(20), nullable=False)
     party_size = db.Column(db.Integer, nullable=False)
     email = db.Column(db.String(100), nullable=False)
+    phone_number = db.Column(db.String(20), nullable=False)  # Add this line
     notified = db.Column(db.Boolean, default=False)
 
 # Email sending function
