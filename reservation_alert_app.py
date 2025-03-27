@@ -6,7 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 from bs4 import BeautifulSoup
 import smtplib
-import datetime
+from datetime import datetime
 from email.message import EmailMessage
 
 app = Flask(__name__)
@@ -106,7 +106,7 @@ def check_availability():
             except Exception as e:
                 print(f"Error checking availability: {e}")
 
-scheduler.add_job(check_availability, 'interval', minutes=5)
+scheduler.add_job(check_availability, 'interval', minutes=5, next_run_time=datetime.utcnow())
 
 
 # API route to create alert
