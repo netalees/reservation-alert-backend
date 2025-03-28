@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify  # Added jsonify for proper JSON responses
+from flask import Flask, request, jsonify  # Import request here
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -8,27 +8,30 @@ import smtplib
 from datetime import datetime
 from email.message import EmailMessage
 
-# Initialize the DB, Migrate, and Scheduler
-db = SQLAlchemy()
-migrate = Migrate()
-scheduler = BackgroundScheduler()
+# Initialize db, migrate, and scheduler globally
+db = SQLAlchemy()  # Initialize db
+migrate = Migrate()  # Initialize migrate
+scheduler = BackgroundScheduler()  # Initialize scheduler
 
 # Create Flask app inside a function to avoid circular imports
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///alerts.db'  # Database URI
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
-    
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///alerts.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
     # Initialize app with db and migrate
     db.init_app(app)
     migrate.init_app(app, db)
-    
+
     # Initialize scheduler
     scheduler.start()
-    
+
     return app
 
+
+# Initialize the app with the factory function
 app = create_app()
+
 
 # Model for alerts
 class Alert(db.Model):
@@ -38,11 +41,12 @@ class Alert(db.Model):
     time = db.Column(db.String(20), nullable=False)
     party_size = db.Column(db.Integer, nullable=False)
     email = db.Column(db.String(100), nullable=False)
-    phone_number = db.Column(db.String(20), nullable=True)  # Added phone_number
+    phone_number = db.Column(db.String(20), nullable=False)  # Add phone_number again
     notified = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
         return f"<Alert {self.restaurant_url} at {self.date} {self.time} for {self.party_size} people>"
+
 
 # Route for creating alerts
 @app.route('/create_alert', methods=['POST'])
@@ -71,45 +75,17 @@ def create_alert():
         db.session.add(new_alert)
         db.session.commit()
 
-        return jsonify({"message": "Alert created successfully!"}), 201
+        return {"message": "Alert created successfully!"}, 201
 
     except Exception as e:
         print(f"Error creating alert: {e}")
-        return jsonify({"message": "Failed to create alert"}), 500
+        return {"message": "Failed to create alert"}, 500
 
-# Email sending function
-def send_email(recipient, subject, body):
-    msg = EmailMessage()
-    msg['Subject'] = subject
-    msg['From'] = 'your_email@example.com'
-    msg['To'] = recipient
-    msg.set_content(body)
-
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.starttls()
-        server.login('your_email@example.com', 'your_app_password')
-        server.send_message(msg)
-
-# WhatsApp sending function
-def send_whatsapp(phone_number, message):
-    print(f"📲 Attempting to send WhatsApp to {phone_number} with message: {message}")
-    
-    url = f"https://api.ultramsg.com/{ULTRAMSG_INSTANCE_ID}/messages/chat"
-    payload = {
-        "token": ULTRAMSG_TOKEN,
-        "to": phone_number,
-        "body": message
-    }
-    try:
-        response = requests.post(url, data=payload)
-        print("📤 WhatsApp sent:", response.status_code, response.json())
-    except Exception as e:
-        print("❌ WhatsApp failed:", e)
 
 # Check reservation availability
 def check_availability():
     print("🧠 Scheduler triggered - checking availability...")
-    
+
     with app.app_context():
         alerts = Alert.query.filter_by(notified=False).all()  # Make sure alerts are fetched inside the context
         print(f"⚡ Found {len(alerts)} pending alerts")
@@ -137,11 +113,11 @@ def check_availability():
             except Exception as e:
                 print(f"⚠️ Error checking availability for alert {alert}: {e}")
 
-# Scheduler job
+
 scheduler.add_job(check_availability, 'interval', minutes=1, next_run_time=datetime.utcnow())
 print("🧠 Scheduler job is added and running...")
 
-# API route to create alert
+
 @app.route("/check_status", methods=["GET"])
 def check_status():
     email = request.args.get("email")
@@ -164,5 +140,5 @@ def check_status():
 # Run the app
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()
+        db.create_all()  # This will create tables
         app.run(debug=False)  # <<< make sure debug is off
